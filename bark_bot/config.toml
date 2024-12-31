@@ -1,0 +1,51 @@
+# General Configuration
+app_name = "BARK Bot"
+app_env = "development"  # Change to 'production' when deploying
+app_debug = true  # Set to false in production for security
+
+# Database Configuration (if using a database)
+[database]
+url = "postgresql://user:password@localhost:5432/barkbot_db"
+pool_size = 10
+
+# Solana Configuration
+[solana]
+network = "devnet"  # Options: 'devnet', 'testnet', or 'mainnet'
+rpc_url = "https://api.devnet.solana.com"
+token_program_id = "TokenkegQfeZyiNwAJbNbGKPFXkQd5J8X8wnF8MPzYx"
+default_wallet_address = "BARKkeAwhTuFzcLHX4DjotRsmjXQ1MshGrZbn1CUQqMo"
+
+# Telegram Bot Configuration
+[telegram]
+bot_api_key = "your-telegram-bot-api-key"
+chat_id = "your-telegram-chat-id"  # Group chat ID where notifications will be sent
+
+# Dialect Blink Protocol
+[blink_protocol]
+url = "https://blink.dialect.com/api"
+
+# Squads v3 Multi-Signature Configuration
+[squads]
+signer_threshold = 2  # The minimum number of signers required for transaction approval
+members = ["Alice", "Bob", "Charlie"]  # Multi-sig group members example
+
+# API and Web Server Configuration
+[server]
+api_host = "localhost"
+api_port = 8080
+web_host = "localhost"
+web_port = 3000
+
+# Security Configuration
+[security]
+jwt_secret = "your-jwt-secret-key"
+secret_key = "your-secret-key-here"
+
+# Error Tracking Service Configuration
+[error_tracking]
+service_url = "https://errors.example.com/report"
+
+# Miscellaneous Configuration
+[misc]
+mint_api_url = "https://api.example.com/upload-metadata"
+metadata_service_url = "https://api.example.com/upload-metadata"
