@@ -10,5 +10,5 @@
   },
   "keywords": ["BARK", "Bot", "Multi-Signature", "Transactions", "Treasury", "Telegram", "Stop", "Start", "API", "Transaction"],
   "author": "BARK Protocol",
-  "license": "MT"
+  "license": "MIT"
 }

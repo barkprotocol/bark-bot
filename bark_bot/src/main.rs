@@ -29,16 +29,20 @@ async fn main() {
     };
 
     // Configure the storage: SQLite or In-memory storage depending on the environment
-    let storage: JoinStorage = if let Some(storage_path) = config.storage_path.clone() {
+    let storage: ErasedStorage<Handler> = if let Some(storage_path) = config.storage_path.clone() {
         match SqliteStorage::open(storage_path, Json).await {
-            Ok(storage) => storage.erase(),
+            Ok(storage) => {
+                log::info!("Using SQLite storage at {:?}", storage_path);
+                storage
+            }
             Err(e) => {
-                log::error!("Failed to open SQLite storage: {}", e);
-                InMemStorage::new().erase()
+                log::error!("Failed to open SQLite storage: {}, falling back to in-memory storage", e);
+                InMemStorage::new()
             }
         }
     } else {
-        InMemStorage::new().erase()
+        log::info!("No STORAGE_PATH provided, using in-memory storage.");
+        InMemStorage::new()
     };
 
     // Define the handler for processing incoming updates from users
