@@ -4,7 +4,7 @@ use axum::{
     routing::{get, patch, post},
     Router,
 };
-use rusqlite::{Connection, OptionalExtension, Result as RusqliteResult};
+use rusqlite::{Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
