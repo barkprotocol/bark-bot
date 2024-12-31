@@ -1,0 +1,14 @@
+{
+  "name": "bark-bot-platform",
+  "version": "1.0.0",
+  "description": "BARK Bot is a powerful platform designed to simplify the management of multi-signature transactions, all through an intuitive Telegram bot interface. The bot integrates with Dialect's Blink protocol to provide seamless cross-platform transaction creation, making it easier than ever to manage treasury operations and group decision-making. It supports various commands like /start and /stop, and interacts with the BARK API to fetch transaction details.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:api": "cd bark_bot_api && cargo run",
+    "start:bot": "cd bark_bot && cargo run"
+  },
+  "keywords": ["BARK", "Bot", "Multi-Signature", "Transactions", "Treasury", "Telegram", "Stop", "Start", "API", "Transaction"],
+  "author": "BARK Protocol",
+  "license": "MT"
+}

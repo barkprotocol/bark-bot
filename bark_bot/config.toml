@@ -17,7 +17,7 @@ default_wallet_address = "BARKkeAwhTuFzcLHX4DjotRsmjXQ1MshGrZbn1CUQqMo"
 
 # Telegram Bot Configuration
 [telegram]
-bot_api_key = "your-telegram-bot-api-key"
+bot_api_key = "7250038538:AAHaCY1T1w8ON9gmLCUuMyiQaepkPM6OD-E"
 chat_id = "your-telegram-chat-id"  # Group chat ID where notifications will be sent
 
 # Dialect Blink Protocol

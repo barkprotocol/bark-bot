@@ -1,4 +1,3 @@
-use squads_mpl::state::MsTransactionStatus;
 use teloxide::{dispatching::dialogue::{self, ErasedStorage, InMemStorage, SqliteStorage}, prelude::*};
 use dptree::{case, deps};
 use std::{env, path::PathBuf, sync::Arc};
@@ -25,21 +24,21 @@ async fn main() {
 
     // Load configuration from environment variables or use default
     let config = Config {
-        channel_id: Some(-4594739971), // Example channel ID
-        storage_path: env::var("STORAGE_PATH").ok().map(PathBuf::from), // Dynamically use environment variable
+        channel_id: Some(-4594739971),
+        storage_path: env::var("STORAGE_PATH").ok().map(PathBuf::from),
     };
 
     // Configure the storage: SQLite or In-memory storage depending on the environment
     let storage: JoinStorage = if let Some(storage_path) = config.storage_path.clone() {
         match SqliteStorage::open(storage_path, Json).await {
-            Ok(storage) => storage.erase(),  // Use SQLite if it exists
+            Ok(storage) => storage.erase(),
             Err(e) => {
                 log::error!("Failed to open SQLite storage: {}", e);
-                InMemStorage::new().erase() // Fall back to in-memory storage on failure
+                InMemStorage::new().erase()
             }
         }
     } else {
-        InMemStorage::new().erase() // Default to in-memory storage if no storage path provided
+        InMemStorage::new().erase()
     };
 
     // Define the handler for processing incoming updates from users
@@ -58,16 +57,18 @@ async fn main() {
             Update::filter_message()
                 .filter_command::<Command>()
                 .branch(case![Command::Help].endpoint(commands::help))
-                .branch(case![Command::Cancel].endpoint(commands::cancel)),
+                .branch(case![Command::Cancel].endpoint(commands::cancel))
+                .branch(case![Command::Start].endpoint(commands::start_command))
+                .branch(case![Command::Stop].endpoint(commands::stop_command))
         );
 
     // Set up the dispatcher to process updates and start listening for incoming messages
     Dispatcher::builder(bot, handler)
-        .dependencies(deps![storage, Arc::new(config)])  // Pass storage and config as dependencies
+        .dependencies(deps![storage, Arc::new(config)])
         .default_handler(|_| async move {
             log::warn!("Received unknown update. Ignoring.");
         })
-        .enable_ctrlc_handler() // Gracefully handle Ctrl+C
+        .enable_ctrlc_handler()
         .build()
         .dispatch()
         .await;
