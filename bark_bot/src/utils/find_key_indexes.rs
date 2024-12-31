@@ -1,18 +1,13 @@
-let ix_keys = vec![
-    AccountMeta::new(Pubkey::new_unique(), false),
-    AccountMeta::new(Pubkey::new_unique(), true),
-];
-let keys_unique = vec![
-    AccountMeta::new(Pubkey::new_unique(), false),
-    AccountMeta::new(Pubkey::new_unique(), true),
-    AccountMeta::new(Pubkey::new_unique(), false),
-];
+use anchor_lang::prelude::AccountMeta;
 
-let indexes = find_key_indexes(&ix_keys, &keys_unique);
-
-for (i, index) in indexes.iter().enumerate() {
-    match index {
-        Some(idx) => println!("Found index for key {}: {}", i, idx),
-        None => println!("Key {} not found", i),
-    }
+pub fn find_key_indexes(ix_keys: &[AccountMeta], keys_unique: &[AccountMeta]) -> Vec<u8> {
+    ix_keys
+        .iter()
+        .map(|a| {
+            keys_unique
+                .iter()
+                .position(|k| k.pubkey == a.pubkey && k.is_writable == a.is_writable)
+                .map_or(255, |index| index as u8) // Return -1 if not found, otherwise the index
+        })
+        .collect()
 }

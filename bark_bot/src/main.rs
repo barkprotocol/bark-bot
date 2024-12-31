@@ -1,7 +1,13 @@
-use teloxide::{dispatching::dialogue::{self, ErasedStorage, InMemStorage, SqliteStorage}, prelude::*};
+use collections::{Command, Config, Handler, JoinStorage};
 use dptree::{case, deps};
-use std::{env, path::PathBuf, sync::Arc};
-use teloxide::{types::Update};
+use std::path::PathBuf;
+use std::sync::Arc;
+use teloxide::dispatching::dialogue::serializer::Json;
+use teloxide::{
+    dispatching::dialogue::{self, ErasedStorage, InMemStorage, SqliteStorage, Storage},
+    prelude::*,
+};
+use dotenv::dotenv;  // Add this to load environment variables
 
 mod actions;
 mod collections;
@@ -13,39 +19,33 @@ mod utils;
 
 #[tokio::main]
 async fn main() {
-    // Initialize logging with pretty_env_logger for better debugging
+    dotenv().ok();  // Load environment variables from .env file
+    
     pretty_env_logger::init();
     log::info!("Starting command bot...");
 
-    // Load the bot token from environment variables (ensure to set the token in your environment)
-    let bot_token = env::var("TELOXIDE_TOKEN")
-        .expect("TELOXIDE_TOKEN must be set in the environment");
-    let bot = Bot::new(bot_token);
+    // Initialize the bot from the environment variables (TELOXIDE_TOKEN must be set)
+    let bot = Bot::from_env();
 
-    // Load configuration from environment variables or use default
+    // Load configuration
     let config = Config {
         channel_id: Some(-4594739971),
-        storage_path: env::var("STORAGE_PATH").ok().map(PathBuf::from),
+        storage_path: Some(PathBuf::from("db.sqlite")),
     };
 
-    // Configure the storage: SQLite or In-memory storage depending on the environment
-    let storage: ErasedStorage<Handler> = if let Some(storage_path) = config.storage_path.clone() {
-        match SqliteStorage::open(storage_path, Json).await {
-            Ok(storage) => {
-                log::info!("Using SQLite storage at {:?}", storage_path);
-                storage
-            }
-            Err(e) => {
-                log::error!("Failed to open SQLite storage: {}, falling back to in-memory storage", e);
-                InMemStorage::new()
-            }
-        }
+    // Initialize storage based on configuration
+    let storage: JoinStorage = if let Some(_storage_path) = config.storage_path.clone() {
+        // Use SQLite storage if a path is specified
+        SqliteStorage::open("db.sqlite", Json)
+            .await
+            .unwrap()
+            .erase()
     } else {
-        log::info!("No STORAGE_PATH provided, using in-memory storage.");
-        InMemStorage::new()
+        // Use in-memory storage if no path is specified
+        InMemStorage::new().erase()
     };
 
-    // Define the handler for processing incoming updates from users
+    // Define the handler for the bot's updates
     let handler = dialogue::enter::<Update, ErasedStorage<Handler>, Handler, _>()
         .branch(Update::filter_callback_query().branch(
             case![Handler::InternalAction { data }].endpoint(handlers::handle_internal_action),
@@ -61,19 +61,17 @@ async fn main() {
             Update::filter_message()
                 .filter_command::<Command>()
                 .branch(case![Command::Help].endpoint(commands::help))
-                .branch(case![Command::Cancel].endpoint(commands::cancel))
-                .branch(case![Command::Start].endpoint(commands::start_command))
-                .branch(case![Command::Stop].endpoint(commands::stop_command))
+                .branch(case![Command::Cancel].endpoint(commands::cancel)),
         );
 
-    // Set up the dispatcher to process updates and start listening for incoming messages
+    // Initialize the dispatcher
     Dispatcher::builder(bot, handler)
-        .dependencies(deps![storage, Arc::new(config)])
+        .dependencies(deps![storage, Arc::new(config)]) // Pass dependencies (storage and config)
         .default_handler(|_| async move {
-            log::warn!("Received unknown update. Ignoring.");
+            // Handle unknown updates here (ignoring them for now)
         })
-        .enable_ctrlc_handler()
+        .enable_ctrlc_handler() // Enable the ctrl+c handler to stop the bot gracefully
         .build()
         .dispatch()
-        .await;
+        .await; // Start dispatching the bot's updates
 }

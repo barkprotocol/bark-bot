@@ -1,21 +1,26 @@
 use crate::collections::BlinkMetadata;
 use reqwest::{Client, Error};
 
-pub async fn get_blink_metadata(url: &str) -> Result<BlinkMetadata, Error> {
+pub async fn get_blink_metadata(url: &String) -> Result<BlinkMetadata, Error> {
     let client = Client::new();
 
-    // Send GET request and await the response
-    let blink_response = client.get(url).send().await.map_err(|e| {
-        println!("Request failed: {}", e); // You can use a logging crate here if needed
-        e
-    })?;
+    let blink_response = client.get(url).send().await;
 
-    // Parse the response as JSON into BlinkMetadata
-    blink_response
-        .json::<BlinkMetadata>()
-        .await
-        .map_err(|e| {
-            println!("Failed to parse metadata: {}", e);
-            e
-        })
+    match blink_response {
+        Ok(res) => {
+            let response = res.json::<BlinkMetadata>().await;
+
+            match response {
+                Ok(metadata) => Ok(metadata),
+                Err(e) => {
+                    println!("Metadata failed: {}", e);
+                    Err(e)
+                }
+            }
+        }
+        Err(e) => {
+            println!("Request failed: {}", e);
+            Err(e)
+        }
+    }
 }

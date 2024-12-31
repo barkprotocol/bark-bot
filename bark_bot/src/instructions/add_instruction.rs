@@ -12,20 +12,14 @@ pub fn add_instruction(
     instruction_index: u8,
     instruction: Instruction,
     user_id: UserId,
-) -> Result<Instruction, String> {
-    // Retrieve the user's keypair
+) -> Instruction {
     let creator_keypair = get_user_keypair(user_id);
     let creator_pubkey = creator_keypair.pubkey();
-
-    // Get the program instance
     let program = get_program(creator_keypair, SQUADS_PROGRAM_ID);
-
-    // Get the transaction public key and instruction public key
     let transaction_pubkey = get_transaction_pubkey(multisig_pubkey, transaction_index);
     let instruction_pubkey = get_instruction_pubkey(transaction_pubkey, instruction_index);
 
-    // Attempt to create the instruction
-    program
+    return program
         .request()
         .accounts(squads_mpl::accounts::AddInstruction {
             system_program: system_program::ID,
@@ -50,6 +44,8 @@ pub fn add_instruction(
             },
         })
         .instructions()
-        .and_then(|instructions| instructions.first().cloned()) // Safely get the first instruction
-        .ok_or_else(|| "Failed to generate instruction".to_string()) // Return an error if no instructions are found
+        .unwrap()
+        .first()
+        .unwrap()
+        .clone();
 }

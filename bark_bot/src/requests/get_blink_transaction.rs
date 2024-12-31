@@ -16,7 +16,7 @@ pub struct BlinkTransactionBody {
 
 pub async fn get_blink_transaction(
     multisig_pubkey: Pubkey,
-    url: &str, // Changed to &str for more flexibility
+    url: &String,
 ) -> Result<GetBlinkTransactionResponse, Error> {
     let client = Client::new();
     let multisig_authority_pubkey = get_multisig_authority_pubkey(multisig_pubkey, 1);
@@ -24,28 +24,31 @@ pub async fn get_blink_transaction(
         account: multisig_authority_pubkey.to_string(),
     };
 
-    // Send POST request and await response
     let blink_response = client
         .post(url)
         .header("Accept", "application/json")
         .json(&body)
         .send()
-        .await
-        .map_err(|e| {
-            println!("POST request failed: {}", e);
-            e
-        })?;
+        .await;
 
-    // Parse the response directly
-    blink_response
-        .json::<GetBlinkTransactionResponse>()
-        .await
-        .map_err(|e| {
-            println!("Transaction failed: {}", e);
-            e
-        })
-        .map(|response| {
-            println!("ACTION TRANSACTION: \n\n{:?}", response);
-            response
-        })
+    match blink_response {
+        Ok(res) => {
+            let transaction = res.json::<GetBlinkTransactionResponse>().await;
+
+            match transaction {
+                Ok(response) => {
+                    println!("ACTION TRANASCTION: \n\n{:?}", response);
+                    Ok(response)
+                }
+                Err(e) => {
+                    println!("Transaction failed: {}", e);
+                    Err(e)
+                }
+            }
+        }
+        Err(e) => {
+            println!("POST request failed: {}", e);
+            Err(e)
+        }
+    }
 }

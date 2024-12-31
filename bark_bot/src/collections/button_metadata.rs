@@ -1,5 +1,3 @@
-use std::convert::{TryFrom, From};
-
 #[derive(Debug)]
 pub struct InvalidButtonMetadataError {}
 
@@ -39,29 +37,5 @@ impl TryFrom<String> for ButtonMetadata {
             transaction_id,
             value,
         })
-    }
-}
-
-fn main() {
-    // Create a ButtonMetadata instance
-    let metadata = ButtonMetadata {
-        transaction_id: 12345,
-        value: "Transaction Value".to_string(),
-    };
-
-    // Convert ButtonMetadata to String
-    let metadata_string: String = String::from(&metadata);
-    println!("Serialized ButtonMetadata: {}", metadata_string);
-
-    // Parse the String back to ButtonMetadata
-    let parsed_metadata: Result<ButtonMetadata, InvalidButtonMetadataError> = ButtonMetadata::try_from(metadata_string);
-    
-    match parsed_metadata {
-        Ok(parsed) => {
-            println!("Parsed ButtonMetadata: {:?}", parsed);
-        },
-        Err(_) => {
-            println!("Failed to parse the ButtonMetadata from the string.");
-        }
     }
 }

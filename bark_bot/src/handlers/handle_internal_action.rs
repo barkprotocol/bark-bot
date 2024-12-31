@@ -25,60 +25,24 @@ pub async fn handle_internal_action(
                 match parameters {
                     Some(parameters_res) => {
                         if parameters_res.is_empty() {
-                            // Handle action immediately if no parameters
-                            if let Err(e) = bot.send_message(dialogue.chat_id(), "Processing blink...".to_string()).await {
-                                eprintln!("Error sending message: {}", e);
-                                return Ok(());
-                            }
+                            bot.send_message(dialogue.chat_id(), "Processing blink...".to_string())
+                                .await?;
 
                             let action_url = format!("{}{}", data.base_url, action.unwrap().href);
-                            let multisig_pubkey = match get_multisig_pubkey() {
-                                Ok(pubkey) => pubkey,
-                                Err(e) => {
-                                    eprintln!("Error fetching multisig pubkey: {}", e);
-                                    bot.send_message(dialogue.chat_id(), "Failed to retrieve multisig pubkey. Try again later.")
-                                        .await?;
-                                    return Ok(());
-                                }
-                            };
-
-                            let transaction_entry = match crate::actions::create_transaction(
+                            let multisig_pubkey = get_multisig_pubkey();
+                            let transaction_entry = crate::actions::create_transaction(
                                 &action_url,
                                 multisig_pubkey,
                                 data.user_id,
-                            ).await {
-                                Ok(entry) => entry,
-                                Err(e) => {
-                                    eprintln!("Error creating transaction: {}", e);
-                                    bot.send_message(dialogue.chat_id(), "Failed to create transaction. Try again later.")
-                                        .await?;
-                                    return Ok(());
-                                }
-                            };
-
-                            let multisig_account = match get_multisig_account(multisig_pubkey).await {
-                                Ok(account) => account,
-                                Err(e) => {
-                                    eprintln!("Error fetching multisig account: {}", e);
-                                    bot.send_message(dialogue.chat_id(), "Failed to fetch multisig account. Try again later.")
-                                        .await?;
-                                    return Ok(());
-                                }
-                            };
-
+                            )
+                            .await;
+                            let multisig_account = get_multisig_account(multisig_pubkey).await;
                             let threshold = multisig_account.threshold;
-                            let transaction_account = match get_transaction_account(
+                            let transaction_account = get_transaction_account(
                                 multisig_pubkey,
                                 transaction_entry.transaction_index,
-                            ).await {
-                                Ok(account) => account,
-                                Err(e) => {
-                                    eprintln!("Error fetching transaction account: {}", e);
-                                    bot.send_message(dialogue.chat_id(), "Failed to retrieve transaction details. Try again later.")
-                                        .await?;
-                                    return Ok(());
-                                }
-                            };
+                            )
+                            .await;
 
                             let template = get_transaction_request_message(
                                 data.action_title,
@@ -96,29 +60,23 @@ pub async fn handle_internal_action(
                             );
 
                             let group_chat_id = get_group_chat_id();
-                            let group_message = match bot
+                            let group_message = bot
                                 .send_message(group_chat_id, template)
                                 .parse_mode(ParseMode::Html)
                                 .reply_markup(InlineKeyboardMarkup::new([buttons]))
-                                .await {
-                                    Ok(message) => message,
-                                    Err(e) => {
-                                        eprintln!("Error sending group message: {}", e);
-                                        bot.send_message(dialogue.chat_id(), "Failed to notify group. Try again later.")
-                                            .await?;
-                                        return Ok(());
-                                    }
-                                };
+                                .await?;
 
-                            crate::requests::update_transaction(transaction_entry.id, group_message.id)
-                                .await;
+                            crate::requests::update_transaction(
+                                transaction_entry.id,
+                                group_message.id,
+                            )
+                            .await;
 
                             bot.send_message(dialogue.chat_id(), "Transaction sent!".to_string())
                                 .await?;
 
                             dialogue.exit().await?;
                         } else {
-                            // Validate parameters
                             let parameter_names: Vec<String> =
                                 parameters_res.iter().map(|p| p.name.clone()).collect();
                             let parameter_labels: Vec<String> =
@@ -145,22 +103,17 @@ pub async fn handle_internal_action(
                                 }
                             }
 
-                            // Prompt for missing parameters
-                            if let Err(e) = bot.send_message(dialogue.chat_id(), format!(
+                            bot.send_message(dialogue.chat_id(), format!(
                                 "The action <b>{}</b> has the following params: \n\n{}Please enter the values as they are requested.", 
                                 action_name, result_parameters
                                 )
-                            ).parse_mode(ParseMode::Html).await {
-                                eprintln!("Error sending parameter message: {}", e);
-                                return Ok(());
-                            }
+                            )
+                            .parse_mode(ParseMode::Html)
+                            .await?;
 
-                            if let Err(e) = bot.send_message(dialogue.chat_id(), parameter_labels[0].to_string())
+                            bot.send_message(dialogue.chat_id(), parameter_labels[0].to_string())
                                 .parse_mode(ParseMode::Html)
-                                .await {
-                                    eprintln!("Error asking for first parameter: {}", e);
-                                    return Ok(());
-                            }
+                                .await?;
 
                             let parameters_values: Vec<String> = Vec::new();
 
@@ -183,10 +136,52 @@ pub async fn handle_internal_action(
                         }
                     }
                     None => {
-                        // Handle case where parameters are missing or not found
-                        eprintln!("Parameters are missing or incorrect for action.");
-                        bot.send_message(dialogue.chat_id(), "Parameters for the action could not be found.")
+                        // TODO: Does it ever gets here?
+
+                        let multisig_pubkey = get_multisig_pubkey();
+                        let transaction_entry = crate::actions::create_transaction(
+                            &data.url,
+                            multisig_pubkey,
+                            data.user_id,
+                        )
+                        .await;
+                        let multisig_account = get_multisig_account(multisig_pubkey).await;
+                        let threshold = multisig_account.threshold;
+                        let transaction_account = get_transaction_account(
+                            multisig_pubkey,
+                            transaction_entry.transaction_index,
+                        )
+                        .await;
+
+                        let template = get_transaction_request_message(
+                            data.action_title,
+                            data.action_description,
+                            None,
+                            transaction_entry.transaction_index,
+                        );
+
+                        let buttons = get_transaction_request_buttons(
+                            transaction_entry.id,
+                            threshold,
+                            1,
+                            0,
+                            &transaction_account.status,
+                        );
+
+                        let group_chat_id = get_group_chat_id();
+                        let group_message = bot
+                            .send_message(group_chat_id, template)
+                            .parse_mode(ParseMode::Html)
+                            .reply_markup(InlineKeyboardMarkup::new([buttons]))
                             .await?;
+
+                        crate::requests::update_transaction(transaction_entry.id, group_message.id)
+                            .await;
+
+                        bot.send_message(dialogue.chat_id(), "Transaction sent!".to_string())
+                            .await?;
+
+                        dialogue.exit().await?;
                     }
                 }
             }

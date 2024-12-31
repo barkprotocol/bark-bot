@@ -8,17 +8,14 @@ pub fn find_unique_account_metas_map(
     let mut unique_account_metas_map: HashMap<Pubkey, AccountMeta> = HashMap::new();
 
     for account_meta in account_metas {
-        match unique_account_metas_map.get(&account_meta.pubkey) {
-            Some(prev_account_meta) => {
-                // Skip insertion if we already have the same pubkey and writable flag
-                if prev_account_meta.is_writable == account_meta.is_writable {
-                    continue;
-                }
-            }
-            None => {} // No existing entry, so proceed with insertion
+        let prev_account_meta = unique_account_metas_map.get(&account_meta.pubkey);
+
+        if prev_account_meta.is_some()
+            && prev_account_meta.unwrap().is_writable == account_meta.is_writable
+        {
+            continue;
         }
 
-        // Insert or overwrite with the new AccountMeta
         unique_account_metas_map.insert(account_meta.pubkey, account_meta.clone());
     }
 
