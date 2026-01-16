@@ -10,7 +10,7 @@
     "run:bot": "ts-node src/app/index.ts"
   },
   "dependencies": {
-    "@langchain/core": "^0.3.26",
+    "@langchain/core": "^0.3.80",
     "@langchain/langgraph": "^0.2.36",
     "@langchain/langgraph-checkpoint-postgres": "^0.0.2",
     "@langchain/openai": "^0.3.16",
